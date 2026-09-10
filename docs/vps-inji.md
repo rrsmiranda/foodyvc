@@ -65,11 +65,20 @@ Os outros `*.beachd.com.br` seguem na VPS antiga (`147.79.82.31`).
   só é chamado após `VP_SUBMITTED`, então não ocorre.
 - Sem cabeçalhos de autenticação (confirmado).
 
+## Hardening aplicado (2026-09-10, ref. `producao.html`)
+
+- `INJI_VERIFY_INCLUDE_RESPONSE_CODE_SECURITY_CHECKS=true` no env.
+- Rotação de log nos 3 serviços: `json-file` `max-size 10m` `max-file 5`.
+- **Backup**: `cron` `0 3 * * *` → `/root/inji/backup.sh` (`pg_dump | gzip` em `backups/`, retenção 7 dias). Restaurar: `gunzip -c backups/X.sql.gz | docker compose exec -T postgres psql -U inji inji_verify`.
+- Publicação de portas: **nenhuma** (só o Caddy fala com o INJI, via rede interna) — supera o `127.0.0.1:8080` da doc.
+
 ## Pendências
 
-- **Box antigo** `147.79.82.31`: remover a stack órfã `injiverify` (`docker stack rm injiverify`) quando o servidor voltar a responder (estava sobrecarregado: load ~40, 37 serviços).
-- **Onboarding VerificaIdade**: Inji Wallet + `ECACredential` de teste emitida (issuer/staging). Confirmar se `did:web:verify.beachd.com.br:v1:verify` precisa ser registrado no gateway deles.
-- Hardening: trocar senha root por chave SSH, restringir a porta do Portainer (se instalar).
+- **KEYSTORE (importante)**: rodando com o `test.p12` embutido → `did.json` serve a **chave de teste**. Confirmar com a equipe VerificaIdade se serve pro piloto ou se precisa PKCS12 próprio registrado no gateway. Se sim: gerar PKCS12, montar no container (`INJI_*KEYSTORE*` envs), redeployar — `did.json` passa a servir a chave nova.
+- **Onboarding VerificaIdade**: Inji Wallet configurada pro piloto + `ECACredential` de teste emitida (issuer/staging).
+- **Box antigo** `147.79.82.31`: remover a stack órfã `injiverify` (`docker stack rm injiverify`) quando responder (sobrecarregado: load ~40).
+- Trocar senha root por chave SSH.
+- Confirmado ao vivo: `client_id` do request object = `did:web:verify.beachd.com.br:v1:verify` (= `VERIFY_CLIENT_ID` do app); formatos aceitos `ldp_vp` (Ed25519 2018/2020, RSA 2018) + `vc+sd-jwt`.
 
 ## docker-compose.yml (referência)
 
