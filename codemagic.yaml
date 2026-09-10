@@ -45,3 +45,43 @@ workflows:
     # Para receber o APK por e-mail, adicione um bloco `publishing:` com
     # `email: { recipients: [seu@email], notify: { success: true } }`.
     # Sem isso, baixe o APK pela pagina do build no painel.
+
+  ios-unsigned:
+    # Build iOS SEM assinatura — valida que compila em Xcode real + pods.
+    # Nao instala em device (precisa Apple Developer + code signing -> Fase 4).
+    # Runner macOS do Codemagic ja tem Xcode + CocoaPods.
+    name: iOS build (unsigned)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    environment:
+      flutter: 3.24.5
+      xcode: latest
+      cocoapods: default
+      groups:
+        - verify_service
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/Library/Caches/CocoaPods
+        - ios/Pods
+    scripts:
+      - name: flutter pub get
+        script: flutter pub get
+      - name: pod install
+        script: cd ios && pod install --repo-update
+      - name: analyze
+        script: flutter analyze
+      - name: testes
+        script: flutter test
+      - name: build iOS (no codesign)
+        script: |
+          flutter build ios --debug --no-codesign \
+            --dart-define=VERIFY_BASE_URL="$VERIFY_BASE_URL" \
+            --dart-define=VERIFY_CLIENT_ID="$VERIFY_CLIENT_ID" \
+            --dart-define=VERIFY_ALLOW_INSECURE="${VERIFY_ALLOW_INSECURE:-false}" \
+            --dart-define=VERIFY_SEND_ORIGIN="${VERIFY_SEND_ORIGIN:-true}"
+      - name: zip Runner.app
+        script: cd build/ios/iphoneos && zip -qr Runner-app.zip Runner.app
+    artifacts:
+      - build/ios/iphoneos/Runner-app.zip
+      - flutter_drive.log

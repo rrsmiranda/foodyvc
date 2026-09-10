@@ -23,6 +23,10 @@ run: config/local.json ## roda o app REAL no device (le config/local.json)
 apk: config/local.json ## gera build/app/outputs/flutter-apk/app-debug.apk
 	$(FLUTTER) build apk --debug --dart-define-from-file=config/local.json
 
+ios: config/local.json ## build iOS sem assinatura (precisa Xcode completo + CocoaPods)
+	cd ios && pod install
+	$(FLUTTER) build ios --debug --no-codesign --dart-define-from-file=config/local.json
+
 web: ## build web da demo -> build/web
 	$(FLUTTER) build web -t lib/main_demo.dart
 
