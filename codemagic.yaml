@@ -41,10 +41,6 @@ workflows:
             --dart-define=VERIFY_SEND_ORIGIN="${VERIFY_SEND_ORIGIN:-false}"
     artifacts:
       - build/**/outputs/**/*.apk
-    publishing:
-      email:
-        recipients:
-          - COLOQUE_SEU_EMAIL_AQUI
-        notify:
-          success: true
-          failure: true
+    # Para receber o APK por e-mail, adicione um bloco `publishing:` com
+    # `email: { recipients: [seu@email], notify: { success: true } }`.
+    # Sem isso, baixe o APK pela pagina do build no painel.
