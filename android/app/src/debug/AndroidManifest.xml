@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Merge apenas em builds DEBUG (flutter run, flutter build apk debug).
+         Libera trafego HTTP cleartext para testar contra um INJI Verify
+         Service em LAN sem ngrok. Builds release usam o AndroidManifest.xml
+         normal e mantem o padrao seguro do Android (cleartext bloqueado). -->
+    <application android:networkSecurityConfig="@xml/network_security_config_debug" />
+</manifest>

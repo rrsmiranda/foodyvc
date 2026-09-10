@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Apenas builds DEBUG. Permite HTTP cleartext para testar o app contra um
+  INJI Verify Service rodando em LAN (ex.: http://192.168.0.10:8080) sem ngrok.
+
+  Combine com o gate do app: dart define VERIFY_ALLOW_INSECURE=true
+
+  Release nao usa este arquivo, entao HTTPS continua obrigatorio nas duas
+  camadas.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

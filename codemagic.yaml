@@ -1,0 +1,50 @@
+# Codemagic CI — build do APK debug para o teste real com o INJI Verify Service.
+#
+# Antes de rodar, no painel do Codemagic (Environment variables) crie o grupo
+# "verify_service" com:
+#   VERIFY_BASE_URL     = https://SEU-TUNEL.ngrok-free.app     (obrigatorio)
+#   VERIFY_CLIENT_ID    = did:web:SEU-TUNEL.ngrok-free.app:v1:verify   (obrigatorio)
+#   VERIFY_ALLOW_INSECURE = true|false   (opcional; true so p/ HTTP em LAN)
+#   VERIFY_SEND_ORIGIN    = true|false   (opcional; true se a wallet exigir origin)
+#
+# A URL do ngrok muda a cada restart -> quando mudar, atualize a env var e
+# rode o build de novo (o --dart-define e compile-time).
+
+workflows:
+  android-debug-test:
+    name: Android debug APK (teste real)
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      flutter: 3.24.5          # casar com a versao local; se indisponivel use 3.24.x
+      groups:
+        - verify_service
+      vars:
+        PACKAGE_NAME: "br.com.verificaidade.app_idade18"
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $FLUTTER_ROOT/.pub-cache
+    scripts:
+      - name: flutter pub get
+        script: flutter pub get
+      - name: analyze
+        script: flutter analyze
+      - name: testes
+        script: flutter test
+      - name: build APK debug
+        script: |
+          flutter build apk --debug \
+            --dart-define=VERIFY_BASE_URL="$VERIFY_BASE_URL" \
+            --dart-define=VERIFY_CLIENT_ID="$VERIFY_CLIENT_ID" \
+            --dart-define=VERIFY_ALLOW_INSECURE="${VERIFY_ALLOW_INSECURE:-false}" \
+            --dart-define=VERIFY_SEND_ORIGIN="${VERIFY_SEND_ORIGIN:-false}"
+    artifacts:
+      - build/**/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - COLOQUE_SEU_EMAIL_AQUI
+        notify:
+          success: true
+          failure: true
