@@ -1,38 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Demo — App 18+ VerificaIdade (verificacao de idade OID4VP).">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="app_idade18">
+  <meta name="apple-mobile-web-app-title" content="Idade 18+ (demo)">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>app_idade18</title>
+  <title>Idade 18+ — demo</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    :root { color-scheme: dark; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #1b2530 0%, #0b0f14 60%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    /* Moldura de celular (desktop / telas grandes) */
+    #phone {
+      position: relative;
+      aspect-ratio: 9 / 19.5;
+      height: min(860px, calc(100dvh - 48px));
+      width: auto;
+      background: #0f141a;
+      border-radius: 42px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 2px #3a4048,
+        0 0 0 12px #14181d,
+        0 0 0 13px #23282f,
+        0 40px 90px -25px rgba(0, 0, 0, .65);
+    }
+    /* "notch" */
+    #phone::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 22px;
+      background: #000;
+      border-radius: 0 0 16px 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #phone flutter-view,
+    #phone flt-glass-pane { border-radius: inherit; }
+
+    /* Celular de verdade: tela cheia, sem moldura */
+    @media (max-width: 540px), (max-height: 620px) {
+      body { padding: 0; }
+      #phone {
+        aspect-ratio: auto;
+        height: 100dvh;
+        width: 100vw;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      #phone::before { display: none; }
+    }
+  </style>
 </head>
 <body>
+  <div id="phone"></div>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
