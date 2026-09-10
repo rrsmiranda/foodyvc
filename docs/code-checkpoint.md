@@ -13,7 +13,8 @@
 - UI: Material 3, design system em Dart (`lib/core/theme` + `lib/core/widgets`), tipografia `google_fonts` ^6.3.0 (Inter)
 - Estrutura: feature-first (lib/features/{shop,age_check} + lib/core)
 - Projeto Flutter na RAIZ do repo `foody`; `name: app_idade18`; org `br.com.verificaidade`; plataformas: **android + ios + web** (web adicionado p/ rodar a demo sem toolchain nativa)
-- **Git**: `github.com/rrsmiranda/foodyvc` (branch `main`). CI = Codemagic (`codemagic.yaml`, workflow `android-debug-test`).
+- **Git**: `github.com/rrsmiranda/foodyvc` (branch `main`, **público**). CI: Codemagic (`codemagic.yaml` → APK debug) + GitHub Actions (`.github/workflows/deploy-web.yml` → demo web no Pages).
+- **Demo web publicada**: https://rrsmiranda.github.io/foodyvc/ (build `lib/main_demo.dart` + mock M4; republica a cada push na `main` fora de `docs/`).
 
 ## Arquitetura Atual
 PRODUTO = verificação de idade. iFood = só CASCA de simulação de compra.
