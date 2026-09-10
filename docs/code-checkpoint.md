@@ -215,10 +215,13 @@ Já batiam com o tutorial (sem mudança): base `/v1/verify`, os 3 caminhos, `{st
 - `flutter analyze`: 0 issues. `flutter test`: **107/107**.
 
 ## Estado do MVP — o que falta para o TESTE REAL
-**Código do app: pronto.** Com o serviço acessível por HTTPS (ngrok), basta `--dart-define` + Android SDK. Restante:
-1. **Infra (Fase 0, externa):** subir um INJI Verify Service (quickstart: Docker + ngrok) com `INJI_VP_SUBMISSION_BASE_URL` / `INJI_DID_VERIFY_URI` / `INJI_DID_VERIFY_PUBLIC_KEY_URI` e o **DID document** publicado; Inji Wallet num device físico + **`ECACredential` de teste** emitida.
-2. **APK debug:** **local** — `make apk` (ou `flutter build apk --debug --dart-define-from-file=config/local.json`). Android SDK já configurado. Alternativa: **Codemagic** (`codemagic.yaml`, workflow `android-debug-test`, grupo de env vars `verify_service`) — útil p/ CI ou builds sem a máquina.
-3. **Instalar + testar:** baixar `app-debug.apk` do build → `adb install` (ou abrir o link no aparelho) → `/diag` (ícone na AppBar, só em debug) → "GET /actuator/health" = UP → testar o fluxo pela loja. A URL do ngrok rotaciona: ao mudar, atualizar a env var no Codemagic e rebuildar (`--dart-define` é compile-time).
+**Código do app: pronto. INJI Verify Service: NO AR** — `https://verify.beachd.com.br` (VPS dedicada Hostinger `2.25.149.198`; Caddy + `injistack/inji-verify-service:0.18.1` + Postgres 15; TLS Let's Encrypt; `/v1/verify/actuator/health` = UP; `/v1/verify/did.json` OK). Detalhes/operação: **`docs/vps-inji.md`**. `config/local.json` já preenchido com esses valores.
+Falta:
+1. **Onboarding VerificaIdade (externo):** APK da **Inji Wallet** + **`ECACredential` de teste** emitida numa wallet (issuer/staging). Confirmar se `did:web:verify.beachd.com.br:v1:verify` precisa registro no gateway deles ou se o `did.json` auto-hospedado basta.
+2. **Env vars no Codemagic** (grupo `verify_service`): `VERIFY_BASE_URL=https://verify.beachd.com.br`, `VERIFY_CLIENT_ID=did:web:verify.beachd.com.br:v1:verify`.
+3. **Gerar APK**: `make apk` (local, Android SDK já configurado) ou workflow `android-debug-test` no Codemagic → instalar (`adb install`) no device Android que tem a Inji Wallet + a credencial.
+4. **Testar**: `/diag` (ícone na AppBar, só em debug) → "GET /actuator/health" = UP → fluxo pela Loja (item 18+ → Finalizar → Verificar idade → autorizar na wallet → volta ao app).
+5. **Limpar o box antigo** `147.79.82.31`: `docker stack rm injiverify` (quando responder — está sobrecarregado, load ~40, 37 serviços; SSH deu timeout).
 
 ## Depois do teste real
 - **Fase 4:** revisão seg/LGPD final + build assinado (keystore Android, signing/provisioning iOS).
