@@ -72,11 +72,16 @@ class VerifyService {
 
   VerifyConfig get config => _config;
 
+  /// Janela do long-poll do `/status` no INJI Verify Service (mede ~55s;
+  /// devolve na hora quando o estado muda). O timeout de recepcao da chamada
+  /// de status usa esta duracao + margem.
+  static const Duration kStatusLongPollWindow = Duration(seconds: 70);
+
   static Dio _buildDio(VerifyConfig config) => Dio(
         BaseOptions(
           baseUrl: config.baseUrl,
           connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 30),
           sendTimeout: const Duration(seconds: 15),
           contentType: Headers.jsonContentType,
           headers: const <String, dynamic>{'Accept': Headers.jsonContentType},
@@ -174,11 +179,37 @@ class VerifyService {
 
   /// `GET /vp-request/{requestId}/status` → `ACTIVE | VP_SUBMITTED | EXPIRED`
   /// (sempre em maiusculas).
+  ///
+  /// O INJI Verify Service faz **long-polling**: segura a conexao ~55s e so
+  /// responde na hora quando o estado muda. Por isso a chamada usa um
+  /// `receiveTimeout` maior ([kStatusLongPollWindow]); se ainda assim estourar,
+  /// tratamos como "sem mudanca" (`ACTIVE`) e o loop chama de novo — nao e erro.
   Future<String> pollStatus(String requestId) async {
-    final Response<dynamic> res = await _send(
-      () => _dio.get<dynamic>(VerifyEndpoints.status(requestId)),
-      action: 'consultar o status da verificacao',
-    );
+    final Response<dynamic> res;
+    try {
+      res = await _dio.get<dynamic>(
+        VerifyEndpoints.status(requestId),
+        options: Options(receiveTimeout: kStatusLongPollWindow),
+      );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        return VpStatus.active; // janela do long-poll fechou sem mudanca
+      }
+      throw VerifyNetworkException(
+        'Falha ao consultar o status da verificacao.',
+        statusCode: e.response?.statusCode,
+      );
+    }
+
+    final int? code = res.statusCode;
+    if (code == null || code >= 300) {
+      throw VerifyNetworkException(
+        'Falha ao consultar o status da verificacao (HTTP $code).',
+        statusCode: code,
+      );
+    }
 
     final Map<String, dynamic> body = _asMap(res.data, context: 'status');
     final String? raw = _asNonEmptyString(

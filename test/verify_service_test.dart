@@ -261,6 +261,38 @@ void main() {
         throwsA(isA<VerifyNetworkException>()),
       );
     });
+
+    test('receiveTimeout do long-poll -> devolve ACTIVE (nao e erro)', () async {
+      final Dio dio = Dio(BaseOptions(baseUrl: 'https://verify.test'));
+      dio.httpClientAdapter = _ThrowingAdapter(
+        DioException(
+          requestOptions: RequestOptions(path: '/x'),
+          type: DioExceptionType.receiveTimeout,
+        ),
+      );
+      final VerifyService service =
+          VerifyService(dio: dio, uriLauncher: _RecordingLauncher().call);
+
+      expect(await service.pollStatus('req-1'), VpStatus.active);
+    });
+
+    test('erro de conexao real do long-poll -> VerifyNetworkException',
+        () async {
+      final Dio dio = Dio(BaseOptions(baseUrl: 'https://verify.test'));
+      dio.httpClientAdapter = _ThrowingAdapter(
+        DioException(
+          requestOptions: RequestOptions(path: '/x'),
+          type: DioExceptionType.connectionError,
+        ),
+      );
+      final VerifyService service =
+          VerifyService(dio: dio, uriLauncher: _RecordingLauncher().call);
+
+      expect(
+        () => service.pollStatus('req-1'),
+        throwsA(isA<VerifyNetworkException>()),
+      );
+    });
   });
 
   group('getResult (via mock)', () {
@@ -664,6 +696,25 @@ class _InspectAdapter implements HttpClientAdapter {
       },
     );
   }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// Adapter que sempre lanca a [DioException] dada — para simular timeout do
+/// long-poll / erro de conexao.
+class _ThrowingAdapter implements HttpClientAdapter {
+  _ThrowingAdapter(this.error);
+
+  final DioException error;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async =>
+      throw error;
 
   @override
   void close({bool force = false}) {}

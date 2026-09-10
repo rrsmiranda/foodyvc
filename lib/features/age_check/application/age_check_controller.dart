@@ -121,19 +121,22 @@ class AgeCheckState {
 }
 
 /// Tempos do loop de polling. Provider proprio para os testes reduzirem o
-/// intervalo a zero. Defaults iguais ao tutorial VerificaIdade
-/// (`intervalMs = 2000`, `maxAttempts = 150` → ~5 min).
+/// intervalo a zero.
+///
+/// O `/status` do INJI e **long-polling** (~55s por chamada, devolve na hora
+/// quando muda). Logo `pollInterval` e so uma folga entre ciclos e `maxPolls`
+/// e um teto de ciclos: `8 × ~55s ≈ 7 min` de espera maxima pela autorizacao.
 @immutable
 class AgeCheckTiming {
   const AgeCheckTiming({
-    this.pollInterval = const Duration(seconds: 2),
-    this.maxPolls = 150,
+    this.pollInterval = const Duration(seconds: 1),
+    this.maxPolls = 8,
   });
 
-  /// Espera entre consultas de status enquanto o retorno e `ACTIVE`.
+  /// Folga entre um ciclo de long-poll e o proximo.
   final Duration pollInterval;
 
-  /// Teto de consultas antes de desistir (≈ [pollInterval] × [maxPolls]).
+  /// Teto de ciclos de long-poll antes de desistir (→ estado `expired`).
   final int maxPolls;
 }
 

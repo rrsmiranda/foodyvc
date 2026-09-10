@@ -49,6 +49,22 @@ Os outros `*.beachd.com.br` seguem na VPS antiga (`147.79.82.31`).
 | `VERIFY_ALLOW_INSECURE` | `false` |
 | `VERIFY_SEND_ORIGIN` | `true` (padrão do app) |
 
+## Observações do serviço real (INJI 0.18.1) — testado ao vivo
+
+- **`POST /vp-request`** devolve **menos** que a doc: só
+  `{ transactionId, requestId, expiresAt (epoch ms), requestUri (topo) }`.
+  **Sem `authorizationDetails`.** O app já lê `requestUri` do topo e o
+  `client_id` do deep link cai no `VerifyConfig.clientId`.
+- **`GET /status` é long-polling (~55 s por chamada)** — só responde na hora
+  quando o estado muda. Params `?timeout=` / `?timeoutMs=` são ignorados.
+  → `VerifyService.pollStatus` usa `receiveTimeout` de 70 s e, se estourar,
+  devolve `ACTIVE` (não é erro); `AgeCheckTiming` = `pollInterval 1s`,
+  `maxPolls 8` (≈ 7 min de espera máxima pela autorização).
+- **`GET /vp-result` antes da submissão** → HTTP 400
+  `{"errorCode":"NO_VP_SUBMISSION","errorMessage":"..."}`. No fluxo normal
+  só é chamado após `VP_SUBMITTED`, então não ocorre.
+- Sem cabeçalhos de autenticação (confirmado).
+
 ## Pendências
 
 - **Box antigo** `147.79.82.31`: remover a stack órfã `injiverify` (`docker stack rm injiverify`) quando o servidor voltar a responder (estava sobrecarregado: load ~40, 37 serviços).
