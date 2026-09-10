@@ -7,8 +7,10 @@ plugins {
 
 android {
     namespace = "br.com.verificaidade.app_idade18"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Fixados (nao via flutter.*) p/ os plugins Android resolverem no config:
+    // com `flutter.compileSdkVersion` o :app_links quebra ("not specified").
+    compileSdk = 34
+    ndkVersion = "25.1.8937393"  // unico NDK instalado nesta maquina
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

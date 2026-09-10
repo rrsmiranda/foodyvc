@@ -41,3 +41,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Config local (URL/DID do Verify Service) — nao versionar
+/config/local.json

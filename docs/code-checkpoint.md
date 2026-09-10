@@ -8,7 +8,7 @@
 ## Stack
 - Lang: Dart 3.5.4 | Framework: Flutter 3.24.5 (`~/development/flutter`, fora do PATH) | DB: — (catálogo mock no MVP)
 - HTTP: dio ^5.11.1 | Estado: flutter_riverpod ^2.6.1 (CONFIRMADO) | Rotas: go_router ^15.1.2
-- Deep link: url_launcher ^6.3.1 + app_links ^6.4.1 | Lifecycle: WidgetsBindingObserver
+- Deep link: url_launcher ^6.3.1 | Lifecycle: WidgetsBindingObserver (`app_links` **removido** — não era usado e quebrava o build Android, exige AGP 8.6; re-adicionar só quando/se for capturar o retorno por deep link)
 - Testes: flutter_test + integration_test (sdk) + http_mock_adapter ^0.6.1
 - UI: Material 3, design system em Dart (`lib/core/theme` + `lib/core/widgets`), tipografia `google_fonts` ^6.3.0 (Inter)
 - Estrutura: feature-first (lib/features/{shop,age_check} + lib/core)
@@ -160,6 +160,15 @@ ios/Runner/Info.plist                     CFBundleURLTypes app18 + LSApplication
 - [x] ~~Backend mock vs real~~ → mock (M4) no MVP, real via --dart-define
 
 ## Última Entrega
+**Rodar local (Mac)** — o Android SDK **existe** (`~/Android`, SDK 34, JDK 17); faltava `flutter config --android-sdk ~/Android` (feito). Descobertas + ajustes:
+- **`app_links` removido** (não era importado em lugar nenhum) — quebrava `flutter build apk` com "compileSdkVersion is not specified" (o `app_links` 6.4.1 exige AGP 8.6.1 + `flutter` ext nos subprojetos de plugin). O retorno da carteira usa `AppLifecycleState.resumed`, não `app_links`.
+- `android/app/build.gradle`: `compileSdk = 34` e `ndkVersion = "25.1.8937393"` **literais** (não via `flutter.*`) — hygiene p/ os plugins resolverem no config. Scaffold segue AGP 8.1.0 / Gradle 8.3 / Kotlin 1.8.22.
+- **Disco**: a máquina estava a 99% (127 MiB livres) → `flutter test` travava. Removido `build/` (~3 GB liberados). `make clean` ajuda.
+- **`flutter build apk --debug` gera** `build/app/outputs/flutter-apk/app-debug.apk` (~88 MB) localmente. `flutter test` 116/116. `flutter analyze` 0 issues.
+- **Config de execução**: `Makefile` (`make demo|run|apk|test|analyze|help`), `.vscode/launch.json` (Demo/App real × Chrome/device), `config/local.example.json` → `config/local.json` (gitignored) p/ `--dart-define-from-file`. `README.md` reescrito com a seção "Rodar local".
+- iOS/macOS seguem bloqueados (Xcode incompleto + CocoaPods ausente).
+
+## Entrega anterior
 **Prontidão para o teste real** — 3 ajustes pedidos:
 1. **`--dart-define=VERIFY_ALLOW_INSECURE=true`** (`AppConfig.allowInsecure` → `VerifyConfig.allowInsecure`): libera `http://` no guard de TLS para testar contra um Verify Service em LAN sem ngrok. Complemento no Android: `android/app/src/debug/AndroidManifest.xml` + `src/debug/res/xml/network_security_config_debug.xml` liberam cleartext **só em builds debug**; release segue exigindo HTTPS nas duas camadas.
 2. **`origin` no deep link** (`AppConfig.sendOrigin` → `VerifyConfig.sendOrigin`): **default `true`** — o guia mobile do VerificaIdade (`integra-mobile.html`) exige `origin=app18://` no fluxo same-device (é por ele que a wallet volta pro app). `--dart-define=VERIFY_SEND_ORIGIN=false` só p/ experimentar. (O guia web/QR omite `origin` por ser cross-device — não é o nosso caso.)
@@ -207,7 +216,7 @@ Já batiam com o tutorial (sem mudança): base `/v1/verify`, os 3 caminhos, `{st
 ## Estado do MVP — o que falta para o TESTE REAL
 **Código do app: pronto.** Com o serviço acessível por HTTPS (ngrok), basta `--dart-define` + Android SDK. Restante:
 1. **Infra (Fase 0, externa):** subir um INJI Verify Service (quickstart: Docker + ngrok) com `INJI_VP_SUBMISSION_BASE_URL` / `INJI_DID_VERIFY_URI` / `INJI_DID_VERIFY_PUBLIC_KEY_URI` e o **DID document** publicado; Inji Wallet num device físico + **`ECACredential` de teste** emitida.
-2. **APK debug:** via **Codemagic** (`codemagic.yaml` no repo — workflow `android-debug-test`) → sem Android SDK local. Precisa: repo git remoto (GitHub/GitLab/Bitbucket) + grupo de env vars `verify_service` (`VERIFY_BASE_URL`, `VERIFY_CLIENT_ID`, opcionais `VERIFY_ALLOW_INSECURE`/`VERIFY_SEND_ORIGIN`). Alternativa local: instalar Android SDK e `flutter run -d <device> --dart-define=...`.
+2. **APK debug:** **local** — `make apk` (ou `flutter build apk --debug --dart-define-from-file=config/local.json`). Android SDK já configurado. Alternativa: **Codemagic** (`codemagic.yaml`, workflow `android-debug-test`, grupo de env vars `verify_service`) — útil p/ CI ou builds sem a máquina.
 3. **Instalar + testar:** baixar `app-debug.apk` do build → `adb install` (ou abrir o link no aparelho) → `/diag` (ícone na AppBar, só em debug) → "GET /actuator/health" = UP → testar o fluxo pela loja. A URL do ngrok rotaciona: ao mudar, atualizar a env var no Codemagic e rebuildar (`--dart-define` é compile-time).
 
 ## Depois do teste real

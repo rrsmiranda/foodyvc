@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Demo (mock) — Chrome",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main_demo.dart",
+      "deviceId": "chrome"
+    },
+    {
+      "name": "Demo (mock) — device",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main_demo.dart"
+    },
+    {
+      "name": "App real — Chrome (config/local.json)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "toolArgs": ["--dart-define-from-file=config/local.json"]
+    },
+    {
+      "name": "App real — device (config/local.json)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dart-define-from-file=config/local.json"]
+    },
+    {
+      "name": "App real — device profile (config/local.json)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "profile",
+      "toolArgs": ["--dart-define-from-file=config/local.json"]
+    }
+  ]
+}

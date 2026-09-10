@@ -1,0 +1,7 @@
+{
+  "_comment": "Copie para config/local.json e ajuste. Usado por --dart-define-from-file (Makefile / launch.json 'App real'). config/local.json NAO vai pro git.",
+  "VERIFY_BASE_URL": "https://verify.seudominio.com",
+  "VERIFY_CLIENT_ID": "did:web:verify.seudominio.com:v1:verify",
+  "VERIFY_ALLOW_INSECURE": "false",
+  "VERIFY_SEND_ORIGIN": "true"
+}
