@@ -28,8 +28,8 @@ class _RecordingLauncher {
 void main() {
   group('createVpRequestAndOpenWallet', () {
     test(
-        'retorna ids e abre openid4vp://authorize (client_id + request_uri, '
-        'sem origin por padrao)', () async {
+        'retorna ids e abre openid4vp://authorize com client_id + request_uri '
+        '+ origin (fluxo mobile same-device)', () async {
       final ({Dio dio, VerifyMockServer server}) mock =
           VerifyMockServer.createDio(scenario: VerifyScenario.over18);
       final _RecordingLauncher launcher = _RecordingLauncher();
@@ -50,10 +50,10 @@ void main() {
       expect(uri.host, 'authorize');
       expect(uri.queryParameters['client_id'], AppConfig.clientId);
       expect(uri.queryParameters['request_uri'], contains('req-over18-1'));
-      expect(uri.queryParameters.containsKey('origin'), isFalse);
+      expect(uri.queryParameters['origin'], 'app18://');
     });
 
-    test('origin no deep link so quando VerifyConfig.sendOrigin', () async {
+    test('sendOrigin=false tira o origin do deep link (opt-out)', () async {
       final ({Dio dio, VerifyMockServer server}) mock =
           VerifyMockServer.createDio(scenario: VerifyScenario.over18);
       final _RecordingLauncher launcher = _RecordingLauncher();
@@ -62,13 +62,16 @@ void main() {
         config: VerifyConfig(
           baseUrl: 'https://verify.test',
           clientId: AppConfig.clientId,
-          sendOrigin: true,
+          sendOrigin: false,
         ),
         uriLauncher: launcher.call,
       );
 
       await service.createVpRequestAndOpenWallet();
-      expect(launcher.lastUri!.queryParameters['origin'], 'app18://');
+      expect(
+        launcher.lastUri!.queryParameters.containsKey('origin'),
+        isFalse,
+      );
     });
 
     test('le requestUri do topo da resposta (shape do tutorial)', () async {

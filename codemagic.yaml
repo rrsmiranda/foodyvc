@@ -5,7 +5,8 @@
 #   VERIFY_BASE_URL     = https://SEU-TUNEL.ngrok-free.app     (obrigatorio)
 #   VERIFY_CLIENT_ID    = did:web:SEU-TUNEL.ngrok-free.app:v1:verify   (obrigatorio)
 #   VERIFY_ALLOW_INSECURE = true|false   (opcional; true so p/ HTTP em LAN)
-#   VERIFY_SEND_ORIGIN    = true|false   (opcional; true se a wallet exigir origin)
+#   VERIFY_SEND_ORIGIN    = true|false   (opcional; default do app ja e true —
+#                                         so defina como false p/ experimentar)
 #
 # A URL do ngrok muda a cada restart -> quando mudar, atualize a env var e
 # rode o build de novo (o --dart-define e compile-time).

@@ -58,7 +58,7 @@ Retomada do polling via AppLifecycleState.resumed.
 - **[v2] Backend próprio previsto = BFF**: backend faz broker do INJI Verify Service (segredos + auditoria no servidor), app fala só com o backend; deep link segue no device. Doc `backend-integracao.md` ainda **não existe** — sem tarefa até a stack/escopo serem definidos. Hoje o app fala direto com o Verify Service (via `--dart-define`); migrar a `baseUrl` para o BFF é trivial (só muda `VerifyConfig.baseUrl`).
 - **M4: mock NÃO usa `http_mock_adapter`** — implementa `HttpClientAdapter` do próprio dio. Motivo: `http_mock_adapter` é dev-dep e importá-lo de `lib/` dispara lint `depend_on_referenced_packages`; além disso o mock precisa de respostas com estado (status ACTIVE→VP_SUBMITTED por contador), e um adapter próprio dá controle total sem risco de API entre versões. O spec permite alternativa ("ou shelf local"). `http_mock_adapter` fica no pubspec para uso pontual em testes de M5 se necessário.
 - **Contrato REST centralizado** em `lib/features/age_check/data/verify_contract.dart` (paths, regex de rota, nomes de campos, constantes de status). M2 e M4 importam daqui — nada de string solta.
-- **Contrato = tutorial verificaidade.dev** (confirmado/ajustado na v9 — ver "Última Entrega"): status → `{ "status": "ACTIVE|VP_SUBMITTED|EXPIRED" }`; result → `{ "vpResultStatus", "vcResults":[{ "vc":{ "credentialSubject":{ "isOver18" }}, "vcStatus" }] }`. `vp-request` body = `{ clientId, presentationDefinition (objeto completo) }`; resposta com `requestUri` no topo + `authorizationDetails` + `expiresAt` (epoch ms). Deep link só `client_id`+`request_uri`. Sem auth headers.
+- **Contrato = tutorial verificaidade.dev** (confirmado/ajustado na v9 — ver "Última Entrega"): status → `{ "status": "ACTIVE|VP_SUBMITTED|EXPIRED" }`; result → `{ "vpResultStatus", "vcResults":[{ "vc":{ "credentialSubject":{ "isOver18" }}, "vcStatus" }] }`. `vp-request` body = `{ clientId, presentationDefinition (objeto completo) }`; resposta com `requestUri` no topo + `authorizationDetails` + `expiresAt` (epoch ms). Deep link mobile = `client_id` + `request_uri` + **`origin`** (`integra-mobile.html`). Sem auth headers.
 - `VerifyMockServer.createDio(...)` devolve `({Dio dio, VerifyMockServer server})`; `server.scenario`/`server.vcShape` mutáveis; `server.reset()` zera contadores. Sessão criada guarda o cenário de origem (troca posterior no server só afeta sessões novas).
 - `VcShape { mapDirect, mapNested, jsonString }` no mock para alimentar a matriz de parsing defensivo do M5.
 - **M2 `VerifyService`** — construtor `factory` recebe `Dio? dio`, `VerifyConfig? config`, `UriLauncher? uriLauncher` (todos injetáveis p/ teste). Se `dio` não vier, cria um com `baseUrl` do config e **guard de TLS** (LGPD §6): `VERIFY_BASE_URL` sem `https://` → `VerifyConfigException`, exceto host local/`.invalid`. `dio` injetado dispensa o guard.
@@ -101,7 +101,7 @@ Retomada do polling via AppLifecycleState.resumed.
 
 ## Arquivos
 ```
-docs/                                   .md v1 + v2 (v2 = fontes de verdade atuais)
+docs/                                   .md v1 + v2 (v2 = fontes de verdade); teste-real-passo-a-passo.md = runbook infra+Codemagic+device
 pubspec.yaml                            + google_fonts (M-DS)
 codemagic.yaml                          [v10] CI Codemagic: workflow android-debug-test → APK debug com --dart-define do grupo verify_service
 web/                                    plataforma web (flutter create --platforms=web) p/ a demo
@@ -162,7 +162,7 @@ ios/Runner/Info.plist                     CFBundleURLTypes app18 + LSApplication
 ## Última Entrega
 **Prontidão para o teste real** — 3 ajustes pedidos:
 1. **`--dart-define=VERIFY_ALLOW_INSECURE=true`** (`AppConfig.allowInsecure` → `VerifyConfig.allowInsecure`): libera `http://` no guard de TLS para testar contra um Verify Service em LAN sem ngrok. Complemento no Android: `android/app/src/debug/AndroidManifest.xml` + `src/debug/res/xml/network_security_config_debug.xml` liberam cleartext **só em builds debug**; release segue exigindo HTTPS nas duas camadas.
-2. **`--dart-define=VERIFY_SEND_ORIGIN=true`** (`AppConfig.sendOrigin` → `VerifyConfig.sendOrigin`): inclui `origin=app18://` no deep link caso a Inji Wallet exija p/ o retorno same-device (tutorial não envia; default off).
+2. **`origin` no deep link** (`AppConfig.sendOrigin` → `VerifyConfig.sendOrigin`): **default `true`** — o guia mobile do VerificaIdade (`integra-mobile.html`) exige `origin=app18://` no fluxo same-device (é por ele que a wallet volta pro app). `--dart-define=VERIFY_SEND_ORIGIN=false` só p/ experimentar. (O guia web/QR omite `origin` por ser cross-device — não é o nosso caso.)
 3. **Tela de diagnóstico** `lib/features/diagnostics/diagnostics_page.dart`, rota `/diag`, acessível pela AppBar da `ShopPage` **só em `kDebugMode`** (ícone `settings_ethernet`). Mostra a config efetiva (`VERIFY_BASE_URL`, `clientId`, flags…) e dispara cada chamada isolada: health, `POST /vp-request` (+abre carteira), `GET status`, `GET vp-result` — com output cru e a exceção tipada em `AppBanner`.
 
 `flutter analyze` 0 issues · `flutter test` **116/116** (+ `verify_service_test` allowInsecure, + `diagnostics_page_test` 3) · web (demo) compila.
@@ -174,7 +174,7 @@ ios/Runner/Info.plist                     CFBundleURLTypes app18 + LSApplication
 |---|---|---|
 | `presentationDefinition` no corpo do vp-request | string `"eca-age-check"` | **objeto completo** (`input_descriptors`/`constraints`/`format`) — `VerifyPresentation.ecaAgeCheck()` em `verify_contract.dart`, cópia fiel do api-reference |
 | `requestUri` na resposta | lido de `authorizationDetails.requestUri` | lido do **topo** da resposta (fallback p/ authorizationDetails) |
-| Deep link | `client_id` + `request_uri` + `origin` | **só `client_id` + `request_uri`**; `origin` é opt-in via `VerifyConfig.sendOrigin` (default `false`) |
+| Deep link | `origin` sempre | mobile same-device (`integra-mobile.html`) manda `client_id` + `request_uri` + **`origin`**; `VerifyConfig.sendOrigin` **default `true`**, opt-out via `--dart-define=VERIFY_SEND_ORIGIN=false` |
 | `authorizationDetails` | `{clientId, requestUri, responseUri, nonce, presentationDefinition}` | `{clientId, nonce, responseUri, responseType:"vp_token", responseMode:"direct_post", issuedAt}` |
 | `expiresAt` / `issuedAt` | ISO8601 string | **epoch ms** (int) |
 | `responseUri` path | `/v1/verify/vp-submission` | `/v1/verify/vp-submission/direct-post` |

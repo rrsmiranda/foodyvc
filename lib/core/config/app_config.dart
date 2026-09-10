@@ -59,12 +59,15 @@ class AppConfig {
     defaultValue: false,
   );
 
-  /// Inclui `origin=app18://` no deep link `openid4vp://authorize`. O tutorial
-  /// nao envia; ligue se a Inji Wallet exigir para o retorno same-device.
-  /// `--dart-define=VERIFY_SEND_ORIGIN=true`
+  /// Inclui `origin=app18://` no deep link `openid4vp://authorize`.
+  ///
+  /// **Default `true`**: o guia mobile do VerificaIdade (integra-mobile.html)
+  /// exige `origin` no fluxo same-device — e por ele que a Inji Wallet sabe
+  /// para onde voltar. Desligue so para experimentar
+  /// (`--dart-define=VERIFY_SEND_ORIGIN=false`).
   static const bool sendOrigin = bool.fromEnvironment(
     'VERIFY_SEND_ORIGIN',
-    defaultValue: false,
+    defaultValue: true,
   );
 
   /// `true` quando um Verify Service real foi injetado via `--dart-define`.
