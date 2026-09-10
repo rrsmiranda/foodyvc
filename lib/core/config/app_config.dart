@@ -48,7 +48,7 @@ class AppConfig {
 
   /// `id` da presentation definition (o objeto completo vive em
   /// `VerifyPresentation.ecaAgeCheck`, em `features/age_check/data`).
-  static const String presentationDefinitionId = 'eca-age-check';
+  static const String presentationDefinitionId = 'eca-age-verification';
 
   /// Permite `VERIFY_BASE_URL` sem TLS (`http://`) — **so para testar contra um
   /// INJI Verify Service em LAN sem ngrok**. Em builds debug o Android tambem

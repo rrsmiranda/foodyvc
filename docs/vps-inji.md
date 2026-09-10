@@ -38,16 +38,22 @@ curl -s https://verify.beachd.com.br/v1/verify/did.json
 `verify.beachd.com.br` → **A** `2.25.149.198` (era CNAME pro apex da VPS antiga).
 Os outros `*.beachd.com.br` seguem na VPS antiga (`147.79.82.31`).
 
-## Config do app
+## Duas opções de Verify Service (o app troca só pelo `--dart-define`)
 
-`config/local.json` e grupo `verify_service` no Codemagic:
+| | Nossa VPS | Dataprev homologação |
+|---|---|---|
+| `VERIFY_BASE_URL` | `https://verify.beachd.com.br` | `https://injiverify.credenciaisverificaveis-hml.dataprev.gov.br` |
+| `VERIFY_CLIENT_ID` | `did:web:verify.beachd.com.br:v1:verify` | `did:web:injiverify.credenciaisverificaveis-hml.dataprev.gov.br:v1:verify` |
+| Controle | total | nenhum |
+| `did.json` | **correto** (`id` bate com o host) | **bugado** (`id` = `did:web:injiverify.dev.mosip.net:v1:verify`) |
+| Confiado pela carteira do piloto | a confirmar (onboarding) | **sim** — é o que o exemplo oficial `pernacabeluda.online` usa |
+| Keystore | `test.p12` embutido | `test.p12` embutido (mesma chave `z6Mkkzru…`) |
 
-| Chave | Valor |
-|---|---|
-| `VERIFY_BASE_URL` | `https://verify.beachd.com.br` |
-| `VERIFY_CLIENT_ID` | `did:web:verify.beachd.com.br:v1:verify` |
-| `VERIFY_ALLOW_INSECURE` | `false` |
-| `VERIFY_SEND_ORIGIN` | `true` (padrão do app) |
+Para o **primeiro teste**, a HML da Dataprev é o caminho de menor risco (já confiada, zero
+onboarding). `config/local.json` já aponta pra ela. Depois, migrar pra nossa VPS quando
+o onboarding do verificador estiver feito.
+
+Grupo `verify_service` no Codemagic + `config/local.json`: as chaves acima + `VERIFY_ALLOW_INSECURE=false`, `VERIFY_SEND_ORIGIN=true`.
 
 ## Observações do serviço real (INJI 0.18.1) — testado ao vivo
 

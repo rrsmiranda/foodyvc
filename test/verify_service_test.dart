@@ -165,12 +165,12 @@ void main() {
       expect(sentBody?[VerifyFields.clientId], AppConfig.clientId);
       final Object? pd = sentBody?[VerifyFields.presentationDefinition];
       expect(pd, isA<Map<String, dynamic>>());
-      expect((pd! as Map<String, dynamic>)['id'], 'eca-age-check');
+      expect((pd! as Map<String, dynamic>)['id'], 'eca-age-verification');
       final List<dynamic> descriptors =
           (pd as Map<String, dynamic>)['input_descriptors'] as List<dynamic>;
       expect(descriptors, hasLength(1));
       expect(
-          (descriptors.first as Map<String, dynamic>)['id'], 'ECACredential');
+          (descriptors.first as Map<String, dynamic>)['id'], 'eca credential');
     });
   });
 

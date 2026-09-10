@@ -143,23 +143,33 @@ class VcStatus {
 const String kEcaCredentialType = 'ECACredential';
 
 /// `id` da presentation definition de verificacao de maioridade.
-const String kEcaAgeCheckId = 'eca-age-check';
+const String kEcaAgeCheckId = 'eca-age-verification';
 
 /// Presentation definitions.
 class VerifyPresentation {
   const VerifyPresentation._();
 
-  /// PD `eca-age-check` — filtra `type == ECACredential`. Enviada **inteira** no
-  /// corpo do `POST /vp-request` (o tutorial nao aceita so o `id`).
+  /// PD de verificacao de maioridade — filtra `type == ECACredential`. Enviada
+  /// **inteira** no corpo do `POST /vp-request`.
   ///
-  /// Copia fiel de https://verificaidade.dev/api-reference.html.
+  /// **Cópia fiel** do exemplo oficial do piloto Dataprev
+  /// (https://pernacabeluda.online/): `id: eca-age-verification`,
+  /// `input_descriptor id: "eca credential"`, `filter.type: "object"`,
+  /// `purpose`/`format` no topo. (A `api-reference.html` usa `eca-age-check` /
+  /// `type: string`; seguimos o exemplo real que já foi testado contra a
+  /// carteira do piloto.)
   static Map<String, dynamic> ecaAgeCheck() => <String, dynamic>{
         'id': kEcaAgeCheckId,
+        'purpose':
+            'Verificação de idade conforme o Estatuto da Criança e do Adolescente',
+        'format': <String, dynamic>{
+          'ldp_vc': <String, dynamic>{
+            'proof_type': <String>['Ed25519Signature2020'],
+          },
+        },
         'input_descriptors': <dynamic>[
           <String, dynamic>{
-            'id': kEcaCredentialType,
-            'name': 'Comprovante de Maioridade',
-            'purpose': 'Verificar que o usuario e maior de 18 anos',
+            'id': 'eca credential',
             'format': <String, dynamic>{
               'ldp_vc': <String, dynamic>{
                 'proof_type': <String>['Ed25519Signature2020'],
@@ -170,7 +180,7 @@ class VerifyPresentation {
                 <String, dynamic>{
                   'path': <String>[r'$.type'],
                   'filter': <String, dynamic>{
-                    'type': 'string',
+                    'type': 'object',
                     'pattern': kEcaCredentialType,
                   },
                 },
