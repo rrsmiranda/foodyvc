@@ -19,13 +19,36 @@ CocoaPods prontos):
 1. Codemagic → app `rrsmiranda/foodyvc` → **Start new build** → workflow
    `ios-unsigned`.
 2. Roda `pod install` → `analyze` → `test` → `flutter build ios --debug
-   --no-codesign` → artefato **`Runner-app.zip`** (`build/ios/iphoneos/Runner.app`).
-3. Valida que compila em Xcode real + pods resolvem. **Não instala em device**
-   (sem assinatura). ~15–20 min (minutos macOS do Codemagic contam mais).
+   --no-codesign` → empacota **`app-unsigned.ipa`**
+   (`build/ios/iphoneos/app-unsigned.ipa`, estrutura `Payload/Runner.app`).
+3. Valida que compila em Xcode real + pods resolvem. ~15–20 min (minutos
+   macOS do Codemagic contam mais).
 
-Para um build **instalável em iPhone** (`.ipa` assinado): precisa de conta
-**Apple Developer Program** (US$ 99/ano) + configurar *code signing* no Codemagic
-(certificado + provisioning profile). Isso é Fase 4.
+### Instalar esse `.ipa` no iPhone via AltStore (sem Apple Developer Program)
+
+O `.ipa` gerado não é assinado — não dá pra distribuir via TestFlight/App
+Store (isso exige conta **Apple Developer Program**, US$ 99/ano — Fase 4).
+Mas dá pra **sideload de graça** com [AltStore](https://faq.altstore.io/)
+(Classic), que assina o app na hora da instalação usando seu Apple ID
+pessoal:
+
+1. **No Mac**: baixe e instale `AltServer.app` em `/Applications`, abra
+   (fica na barra de menu).
+2. **No iPhone**: conecte por cabo e ative "Wi-Fi sync" pelo Finder (ou
+   deixe na mesma rede Wi-Fi do Mac); em iOS 16+ ative Developer Mode
+   (Ajustes → Privacidade e Segurança).
+3. No menu do AltServer → **Install AltStore** → seu dispositivo → informe
+   seu Apple ID (vai só pra Apple). No iPhone: Ajustes → Geral → VPN e
+   Gestão de Dispositivos → confie no seu Apple ID.
+4. Baixe `app-unsigned.ipa` do build do Codemagic e leve pro iPhone (AirDrop
+   do Mac, iCloud Drive, etc. — precisa estar acessível pelo app Arquivos).
+5. No AltStore → aba **My Apps** → **+** → escolha o `app-unsigned.ipa` no
+   Arquivos. O AltServer (precisa estar rodando, mesma rede) assina e
+   instala.
+
+**Limitações do plano grátis**: o app expira em **7 dias** (reabra o
+AltStore com o Mac por perto pra renovar, ou reinstale); **máx. 3 apps**
+sideloaded por vez com Apple ID grátis.
 
 ## Opção B — Xcode local (quando tiver disco + Apple ID)
 
