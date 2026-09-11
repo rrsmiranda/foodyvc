@@ -620,6 +620,35 @@ void main() {
     });
   });
 
+  group('VerifyConfig / sentinel guard', () {
+    test('baseUrl default (verify.invalid) sem dio -> VerifyConfigException',
+        () {
+      expect(
+        () => VerifyService(
+          config: VerifyConfig(
+            baseUrl: AppConfig.verifyBaseUrlSentinel,
+            clientId: 'c',
+          ),
+        ),
+        throwsA(isA<VerifyConfigException>()),
+      );
+    });
+
+    test('baseUrl default (verify.invalid) com dio injetado -> ok (mock)',
+        () {
+      expect(
+        () => VerifyService(
+          dio: Dio(BaseOptions(baseUrl: AppConfig.verifyBaseUrlSentinel)),
+          config: VerifyConfig(
+            baseUrl: AppConfig.verifyBaseUrlSentinel,
+            clientId: 'c',
+          ),
+        ),
+        returnsNormally,
+      );
+    });
+  });
+
   group('VerifyConfig / TLS guard', () {
     test('baseUrl sem https (host publico) -> VerifyConfigException', () {
       expect(

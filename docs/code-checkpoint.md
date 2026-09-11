@@ -1,5 +1,5 @@
 # Code Checkpoint — App 18+ VerificaIdade (Flutter)
-> Última atualização: 2026-09-10 · v11 (INJI Verify Service no ar em verify.beachd.com.br; ajuste long-poll do /status)
+> Última atualização: 2026-09-11 · v12 (guarda de config sentinela + config apontando p/ Dataprev HML)
 > Fase: MVP pronto p/ ligar num INJI Verify Service real. Falta = infra (Fase 0) + Android SDK p/ device.
 > **Contrato REST = fonte de verdade: https://verificaidade.dev (quickstart + integra-web + api-reference).**
 > Modelo ativo: Sonnet (implementação)
@@ -162,6 +162,25 @@ ios/Runner/Info.plist                     CFBundleURLTypes app18 + LSApplication
 - [x] ~~Backend mock vs real~~ → mock (M4) no MVP, real via --dart-define
 
 ## Última Entrega
+**Guarda de config sentinela** — o dev reportou erro "Falha ao criar a solicitação de
+verificação" ao simular. Causa: rodar sem `--dart-define-from-file` (ex.: Xcode/simulador
+direto) deixa `VERIFY_BASE_URL` no default `https://verify.invalid` (host que nunca
+resolve por design, RFC 2606) → `DioException` de conexão, sem código HTTP. Corrigido:
+- `AppConfig.verifyBaseUrlSentinel` (constante nomeada, antes string mágica repetida).
+- `VerifyService` (factory) agora detecta esse sentinel **antes** de tentar rede (só
+  quando `dio` não foi injetado) e lança `VerifyConfigException` com mensagem
+  explicando a causa e o comando certo (`make run`). 2 testes novos em
+  `verify_service_test.dart` (grupo "sentinel guard").
+- `docs/build-ios.md`: aviso de que rodar via Xcode/`Runner.xcworkspace` direto pula os
+  `--dart-define` (usar sempre `flutter run .../make run` com
+  `--dart-define-from-file=config/local.json`) e que o simulador iOS não tem a Inji
+  Wallet instalada (fluxo para em `WalletUnavailableException`).
+- `config/local.json` (fora do git) está hoje apontando pro **Dataprev HML**
+  (`injiverify.credenciaisverificaveis-hml.dataprev.gov.br`, mesma instância do exemplo
+  oficial pernacabeluda.online), não pra VPS própria — confirmado alcançável (health UP).
+`flutter analyze` 0 issues · `flutter test` **119/119**.
+
+## Entrega anterior
 **Rodar local (Mac)** — o Android SDK **existe** (`~/Android`, SDK 34, JDK 17); faltava `flutter config --android-sdk ~/Android` (feito). Descobertas + ajustes:
 - **`app_links` removido** (não era importado em lugar nenhum) — quebrava `flutter build apk` com "compileSdkVersion is not specified" (o `app_links` 6.4.1 exige AGP 8.6.1 + `flutter` ext nos subprojetos de plugin). O retorno da carteira usa `AppLifecycleState.resumed`, não `app_links`.
 - `android/app/build.gradle`: `compileSdk = 34` e `ndkVersion = "25.1.8937393"` **literais** (não via `flutter.*`) — hygiene p/ os plugins resolverem no config. Scaffold segue AGP 8.1.0 / Gradle 8.3 / Kotlin 1.8.22.

@@ -28,11 +28,18 @@ class AppConfig {
   /// Endpoint de autorizacao da carteira.
   static const String walletAuthorizeUrl = '$walletScheme://authorize';
 
+  /// Sentinela usado quando `VERIFY_BASE_URL` nao foi passado via
+  /// `--dart-define`. Host `.invalid` (RFC 2606): nunca resolve por design,
+  /// entao qualquer tentativa de uso real falha rapido e de forma
+  /// reconhecivel (ver guarda em `VerifyService`) em vez de um erro de rede
+  /// generico.
+  static const String verifyBaseUrlSentinel = 'https://verify.invalid';
+
   /// Base do INJI Verify Service. Pendente de confirmacao (Fase 0 do plano);
   /// ate la o app roda contra o mock do M4.
   static const String verifyBaseUrl = String.fromEnvironment(
     'VERIFY_BASE_URL',
-    defaultValue: 'https://verify.invalid',
+    defaultValue: verifyBaseUrlSentinel,
   );
 
   /// Context path fixo do servico (plano, secao 4).
@@ -72,7 +79,7 @@ class AppConfig {
 
   /// `true` quando um Verify Service real foi injetado via `--dart-define`.
   static bool get hasRealVerifyService =>
-      verifyBaseUrl != 'https://verify.invalid';
+      verifyBaseUrl != verifyBaseUrlSentinel;
 
   /// URL completa do servico, ja com o context path.
   static String get verifyApiUrl => '$verifyBaseUrl$verifyContextPath';

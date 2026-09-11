@@ -45,6 +45,21 @@ flutter run -d "iPhone 15" -t lib/main.dart --dart-define-from-file=config/local
 
 `flutter doctor` deve mostrar `[✓] Xcode`.
 
+> **Atenção ao rodar no simulador:** sempre pelo `flutter run`/`make run` com
+> `--dart-define-from-file=config/local.json`, **nunca** abrindo
+> `ios/Runner.xcworkspace` no Xcode e apertando ▶️ direto — isso builda sem
+> nenhum `--dart-define`, então `VERIFY_BASE_URL` cai no default
+> `https://verify.invalid` (sentinela que nunca resolve) e a tela de
+> verificação quebra na hora com "Falha ao criar a solicitação de
+> verificação" (erro de rede, não de credencial). Esse caso agora falha
+> rápido com uma mensagem clara (`VerifyConfigException`) em vez do erro de
+> rede genérico.
+>
+> Além disso, o **simulador não tem a Inji Wallet instalada** — mesmo com a
+> config certa, o fluxo para em "abrir a carteira" (`WalletUnavailableException`).
+> Simulador só valida até a criação da `vp-request`; o fluxo completo exige
+> device físico com a wallet.
+
 ## Config iOS já feita (M0)
 
 `ios/Runner/Info.plist`:

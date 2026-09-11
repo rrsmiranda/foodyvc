@@ -32,6 +32,15 @@ class VerifyService {
   }) {
     final VerifyConfig resolved = config ?? VerifyConfig.fromAppConfig();
 
+    if (dio == null && resolved.baseUrl == AppConfig.verifyBaseUrlSentinel) {
+      throw const VerifyConfigException(
+        'VERIFY_BASE_URL nao foi configurado (rodando com o default '
+        '"https://verify.invalid", que nunca resolve). Rode com '
+        '--dart-define-from-file=config/local.json (ex.: "make run") em vez '
+        'de iniciar direto pelo Xcode/Android Studio sem esse argumento.',
+      );
+    }
+
     if (dio == null && !resolved.allowInsecure) {
       final Uri? parsed = Uri.tryParse(resolved.baseUrl);
       final String host = parsed?.host ?? '';
