@@ -31,16 +31,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
       box-sizing: border-box;
     }
 
-    /* Moldura de celular (desktop / telas grandes) */
+    /* Moldura de celular (desktop / telas grandes).
+       Largura E altura em valores DEFINITIVOS — o modo embedded do Flutter
+       mede o #phone na hora do attach; com width:auto/aspect-ratio dava 0. */
     #phone {
       position: relative;
-      aspect-ratio: 9 / 19.5;
-      height: min(860px, calc(100dvh - 48px));
-      width: auto;
+      width: 390px;
+      height: min(844px, calc(100dvh - 40px));
       background: #0f141a;
       border-radius: 42px;
       overflow: hidden;
@@ -50,7 +51,6 @@
         0 0 0 13px #23282f,
         0 40px 90px -25px rgba(0, 0, 0, .65);
     }
-    /* "notch" */
     #phone::before {
       content: "";
       position: absolute;
@@ -64,16 +64,23 @@
       z-index: 10;
       pointer-events: none;
     }
-    #phone flutter-view,
-    #phone flt-glass-pane { border-radius: inherit; }
+    /* garante que a Flutter view preencha a moldura */
+    #phone > flutter-view,
+    #phone > flt-glass-pane,
+    #phone > flutter-view > flt-glass-pane {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+    }
 
     /* Celular de verdade: tela cheia, sem moldura */
     @media (max-width: 540px), (max-height: 620px) {
       body { padding: 0; }
       #phone {
-        aspect-ratio: auto;
-        height: 100dvh;
         width: 100vw;
+        height: 100dvh;
         border-radius: 0;
         box-shadow: none;
       }
