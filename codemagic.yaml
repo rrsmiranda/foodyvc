@@ -77,7 +77,7 @@ workflows:
         script: flutter test
       - name: build iOS (no codesign)
         script: |
-          flutter build ios --debug --no-codesign \
+          flutter build ios --release --no-codesign \
             --dart-define=VERIFY_BASE_URL="$VERIFY_BASE_URL" \
             --dart-define=VERIFY_CLIENT_ID="$VERIFY_CLIENT_ID" \
             --dart-define=VERIFY_ALLOW_INSECURE="${VERIFY_ALLOW_INSECURE:-false}" \

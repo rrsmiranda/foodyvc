@@ -18,37 +18,58 @@ CocoaPods prontos):
 
 1. Codemagic → app `rrsmiranda/foodyvc` → **Start new build** → workflow
    `ios-unsigned`.
-2. Roda `pod install` → `analyze` → `test` → `flutter build ios --debug
+2. Roda `pod install` → `analyze` → `test` → `flutter build ios --release
    --no-codesign` → empacota **`app-unsigned.ipa`**
    (`build/ios/iphoneos/app-unsigned.ipa`, estrutura `Payload/Runner.app`).
 3. Valida que compila em Xcode real + pods resolvem. ~15–20 min (minutos
    macOS do Codemagic contam mais).
 
-### Instalar esse `.ipa` no iPhone via AltStore (sem Apple Developer Program)
+> **Por que `--release` e não `--debug`:** um build `--debug` do Flutter pra
+> iOS depende de JIT (o Dart VM interpreta bytecode em vez de rodar código
+> nativo) — isso só funciona com um debugger anexado (Xcode) ou com JIT
+> habilitado manualmente no dispositivo. Sideload (AltStore/SideStore) não
+> tem nenhum dos dois por padrão: o app abre uma tela branca e fecha sozinho
+> quase na hora. `--release` compila o Dart pra ARM nativo (AOT) e roda
+> standalone sem depender de debugger/JIT — é o modo certo pra testar via
+> sideload. Efeito colateral: a tela `/diag` (só em `kDebugMode`) não fica
+> disponível nesse build.
+
+### Instalar esse `.ipa` no iPhone via SideStore (sem Apple Developer Program)
 
 O `.ipa` gerado não é assinado — não dá pra distribuir via TestFlight/App
 Store (isso exige conta **Apple Developer Program**, US$ 99/ano — Fase 4).
-Mas dá pra **sideload de graça** com [AltStore](https://faq.altstore.io/)
-(Classic), que assina o app na hora da instalação usando seu Apple ID
-pessoal:
+Dá pra **sideload de graça** com [SideStore](https://sidestore.io/) — o
+sucessor ativamente mantido do AltStore, necessário porque o **AltStore
+Classic/AltServer não conecta de forma confiável em iOS 17/18** (a Apple
+mudou o protocolo de pareamento do device; erro típico: "AltServer could
+not establish a connection to AltStore"). O SideStore lida com esse
+protocolo novo nativamente, via um app de VPN local no próprio iPhone (sem
+precisar do Mac por perto depois do setup inicial).
 
-1. **No Mac**: baixe e instale `AltServer.app` em `/Applications`, abra
-   (fica na barra de menu).
-2. **No iPhone**: conecte por cabo e ative "Wi-Fi sync" pelo Finder (ou
-   deixe na mesma rede Wi-Fi do Mac); em iOS 16+ ative Developer Mode
-   (Ajustes → Privacidade e Segurança).
-3. No menu do AltServer → **Install AltStore** → seu dispositivo → informe
-   seu Apple ID (vai só pra Apple). No iPhone: Ajustes → Geral → VPN e
-   Gestão de Dispositivos → confie no seu Apple ID.
-4. Baixe `app-unsigned.ipa` do build do Codemagic e leve pro iPhone (AirDrop
-   do Mac, iCloud Drive, etc. — precisa estar acessível pelo app Arquivos).
-5. No AltStore → aba **My Apps** → **+** → escolha o `app-unsigned.ipa` no
-   Arquivos. O AltServer (precisa estar rodando, mesma rede) assina e
-   instala.
+1. **No iPhone**: instale o app **LocalDevVPN** pela App Store. Em iOS 18+,
+   ative Developer Mode (Ajustes → Privacidade e Segurança → Developer
+   Mode → reinicia o aparelho).
+2. **No Mac**: baixe e instale o **iloader** ([iloader.app](https://iloader.app/),
+   DMG universal) — é quem instala/assina o SideStore no lugar do antigo
+   AltServer.
+3. Conecte o iPhone por **cabo USB**, toque em "Confiar" quando pedir.
+4. Abra o iloader → faça login com um Apple ID → selecione o iPhone na
+   lista → **"Install SideStore (Stable)"**.
+5. No iPhone: Ajustes → Geral → VPN e Gestão de Dispositivo → confie na
+   conta Apple usada no iloader.
+6. Abra o **LocalDevVPN** → **Connect** (precisa ficar ativo toda vez que for
+   instalar/atualizar/renovar apps pelo SideStore).
+7. Abra o **SideStore**, faça login com a mesma conta do iloader → em **My
+   Apps**, toque no contador **"7 DAYS"** do próprio SideStore pra fazer a
+   primeira renovação (aceite os prompts de certificado).
+8. Baixe `app-unsigned.ipa` do build do Codemagic, leve pro iPhone (AirDrop/
+   iCloud Drive — precisa estar acessível pelo app Arquivos).
+9. No SideStore → **My Apps** → **+** → escolha o `app-unsigned.ipa`. Com a
+   LocalDevVPN conectada, instala/assina direto no aparelho.
 
-**Limitações do plano grátis**: o app expira em **7 dias** (reabra o
-AltStore com o Mac por perto pra renovar, ou reinstale); **máx. 3 apps**
-sideloaded por vez com Apple ID grátis.
+**Limitações do plano grátis**: o app expira em **7 dias** (abrir o
+SideStore com a LocalDevVPN conectada e tocar em "Refresh" renova, sem
+precisar do Mac/iloader de novo — só quando expirar de vez).
 
 ## Opção B — Xcode local (quando tiver disco + Apple ID)
 
@@ -61,7 +82,7 @@ sudo xcodebuild -license accept
 # 3. CocoaPods:
 brew install cocoapods        # ou: sudo gem install cocoapods
 # 4. build:
-make ios                      # flutter build ios --debug --no-codesign
+make ios                      # flutter build ios --release --no-codesign
 # ou rodar no simulador:
 flutter run -d "iPhone 15" -t lib/main.dart --dart-define-from-file=config/local.json
 ```
